@@ -1,0 +1,11 @@
+extends base
+
+block content 
+    h1 helloextends base
+include mixins/video
+
+block content 
+    each video in user.videos
+        +video(video)
+    else 
+        h4 sorry nothing found

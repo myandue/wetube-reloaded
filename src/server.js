@@ -48,6 +48,12 @@ app.get("/add-one", (req, res, next) => {
 });
 
 app.use(localsMiddleware);
+
+//uploads 폴더를 브라우저에 노출
+app.use("/uploads",express.static("uploads"));
+app.use("/assets",express.static("assets"));
+
+
 //서버가 url이 무엇("/", "/videos"...)으로 시작하는지에 따라 라우터("rootRouter", "videoRouter"...)를 설정해줌
 app.use("/",rootRouter);
 app.use("/videos",videoRouter);
