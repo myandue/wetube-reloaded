@@ -107,11 +107,13 @@ const handleMouseLeave = () => {
 }
 
 playBtn.addEventListener("click", handlePlayClick);
+video.addEventListener("click",handlePlayClick);
+document.addEventListener("keypress",(e)=>{if(e.code==="Space"||e.code==="Enter")handlePlayClick();});
 muteBtn.addEventListener("click", handleMute);
 volumeRange.addEventListener("input",handleVolumeChange);
 video.addEventListener("loadeddata", handleLoadedMetadata);
 video.addEventListener("timeupdate",handleTimeUpdate);
-video.addEventListener("mousemove", handleMouseMove);
-video.addEventListener("mouseleave", handleMouseLeave);
+videoContainer.addEventListener("mousemove", handleMouseMove);
+videoContainer.addEventListener("mouseleave", handleMouseLeave);
 timeline.addEventListener("input", handleTimelineChange);
 fullScreenBtn.addEventListener("click",handleFullScreen);
