@@ -71,18 +71,10 @@ const handleDownload = async() => {
     actionBtn.addEventListener("click",handleStart);
 }
 
-const handleStop = () => {
-        actionBtn.innerText = "Download Recording";
-        actionBtn.removeEventListener("click", handleStop);
-        actionBtn.addEventListener("click", handleDownload);
-        //recorder.stop하면 미리 설정해둔 ondataavailable 발동하는 것임
-        recorder.stop();
-}
-
 const handleStart=()=>{
-    actionBtn.innerText = "Stop Recording";
+    actionBtn.innerText = "Recording";
+    actionBtn.disabled = true;
     actionBtn.removeEventListener("click", handleStart);
-    actionBtn.addEventListener("click", handleStop);
     recorder = new MediaRecorder(stream);
     //condataavailable은 녹화가 멈추면 발생하는 event
     recorder.ondataavailable = (event) => {
@@ -94,14 +86,24 @@ const handleStart=()=>{
         video.src=videoFile;
         video.loop=true;
         video.play();
+        actionBtn.innerText = "Download";
+        actionBtn.disabled = false;
+        actionBtn.addEventListener("click", handleDownload);
     }
     recorder.start();
+    //3초만 녹화되도록 할거임 
+    setTimeout(() => {
+        recorder.stop();
+    }, 3000);
 }
 
 const init = async() => {
     stream = await navigator.mediaDevices.getUserMedia({
         audio:false,
-        video:true,
+        video:{
+            width:1024,
+            height:576,
+        },
     });
     video.srcObject = stream;
     video.play();
