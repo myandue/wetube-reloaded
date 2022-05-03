@@ -1,27 +1,48 @@
 import {createFFmpeg, fetchFile} from "@ffmpeg/ffmpeg"
 
-const startBtn = document.getElementById("startBtn");
+const actionBtn = document.getElementById("actionBtn");
 const video = document.getElementById("preview");
+
+const files = {
+    input:"recording.webm",
+    output:"output.mp4",
+    thumb:"thumbnail.jpg"
+}
+
+const downloadFile = (fileUrl, fileName) => {
+    const a = document.createElement("a");
+    //link 지정
+    a.href=fileUrl;
+    //download property 추가 
+    //=> 해당 링크 클릭 시 해당 링크로 이동하는 것이 아니라 download를 하게함
+    a.download=fileName;
+    document.body.appendChild(a);
+    a.click();
+}
 
 let stream;
 let recorder;
 let videoFile;
 
 const handleDownload = async() => {
+    actionBtn.removeEventListener("click",handleDownload);
+    actionBtn.innerText="Transcoding...";
+    actionBtn.disabled=true;
+
     //user의 브라우저에 가상의 컴퓨터를 만듦
     const ffmpeg = createFFmpeg({corePath: 'https://unpkg.com/@ffmpeg/core@0.10.0/dist/ffmpeg-core.js',log:true});
     await ffmpeg.load();
 
     //가상의 컴에 파일을 생성함(FileSystem 이용)
-    ffmpeg.FS("writeFile", "recording.webm", await fetchFile(videoFile));
+    ffmpeg.FS("writeFile", files.input, await fetchFile(videoFile));
 
     //가상의 컴에서 파일을 input(-i)해주고 mp4로 변환해줌
     //"-r", "60" => 초당 60 프레임으로 인코딩 해주는 명령어
-    await ffmpeg.run("-i", "recording.webm","-r","60", "output.mp4");
-    await ffmpeg.run("-i","recording.webm","-ss","00:00:01","-frames:v","1","thumbnail.jpg");
+    await ffmpeg.run("-i", files.input,"-r","60", files.output);
+    await ffmpeg.run("-i",files.input,"-ss","00:00:01","-frames:v","1",files.thumb);
 
-    const mp4File = ffmpeg.FS("readFile","output.mp4");
-    const thumbFile = ffmpeg.FS("readFile","thumbnail.jpg");
+    const mp4File = ffmpeg.FS("readFile",files.output);
+    const thumbFile = ffmpeg.FS("readFile",files.thumb);
 
     //binary data를 사용하고 싶다면 buffer를 사용해야 함.
     //blob은 가상의 컴에서 사용하는 파일
@@ -31,34 +52,37 @@ const handleDownload = async() => {
     const mp4Url = URL.createObjectURL(mp4Blob);
     const thumbUrl = URL.createObjectURL(thumbBlob);
 
-    const a = document.createElement("a");
-    //link 지정
-    a.href=mp4Url;
-    //download property 추가 
-    //=> 해당 링크 클릭 시 해당 링크로 이동하는 것이 아니라 download를 하게함
-    a.download="MyRecording.mp4";
-    document.body.appendChild(a);
-    a.click();
+    downloadFile(mp4Url,"MyRecording.mp4");
+    downloadFile(thumbUrl,"MyThumbnail.jpg");
 
-    const thumbA = document.createElement("a");
-    thumbA.href=thumbUrl;
-    thumbA.download="MyThumbnail.jpg";
-    document.body.appendChild(thumbA);
-    thumbA.click();
+    //다 사용한 파일, 링크 제커(냅두면 브라우저가 무거워서 느려짐)
+    ffmpeg.FS("unlink",files.input);
+    ffmpeg.FS("unlink",files.output);
+    ffmpeg.FS("unlink",files.thumb);
+
+    URL.revokeObjectURL(mp4Url);
+    URL.revokeObjectURL(thumbUrl);
+    URL.revokeObjectURL(videoFile);
+
+    //버튼 활성화
+    init();
+    actionBtn.disabled=false;
+    actionBtn.innerText="Record Again";
+    actionBtn.addEventListener("click",handleStart);
 }
 
 const handleStop = () => {
-        startBtn.innerText = "Download Recording";
-        startBtn.removeEventListener("click", handleStop);
-        startBtn.addEventListener("click", handleDownload);
+        actionBtn.innerText = "Download Recording";
+        actionBtn.removeEventListener("click", handleStop);
+        actionBtn.addEventListener("click", handleDownload);
         //recorder.stop하면 미리 설정해둔 ondataavailable 발동하는 것임
         recorder.stop();
 }
 
 const handleStart=()=>{
-    startBtn.innerText = "Stop Recording";
-    startBtn.removeEventListener("click", handleStart);
-    startBtn.addEventListener("click", handleStop);
+    actionBtn.innerText = "Stop Recording";
+    actionBtn.removeEventListener("click", handleStart);
+    actionBtn.addEventListener("click", handleStop);
     recorder = new MediaRecorder(stream);
     //condataavailable은 녹화가 멈추면 발생하는 event
     recorder.ondataavailable = (event) => {
@@ -76,7 +100,7 @@ const handleStart=()=>{
 
 const init = async() => {
     stream = await navigator.mediaDevices.getUserMedia({
-        audio:true,
+        audio:false,
         video:true,
     });
     video.srcObject = stream;
@@ -85,4 +109,4 @@ const init = async() => {
 
 init();
 
-startBtn.addEventListener("click", handleStart);
+actionBtn.addEventListener("click", handleStart);

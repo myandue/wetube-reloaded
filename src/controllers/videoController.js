@@ -67,8 +67,8 @@ export const postUpload = async(req, res) => {
                 _id,
             },
         },
-        file:{
-            path:fileUrl,
+        files:{
+            video, thumb,
         },
         body:{
             title, description, hashtags,
@@ -77,7 +77,8 @@ export const postUpload = async(req, res) => {
     try{
         const newVideo = await Video.create({
             owner:_id,
-            fileUrl,
+            fileUrl:video[0].path,
+            thumbUrl:thumb[0].path,
             title,
             description,
             hashtags: Video.formatHashtags(hashtags),
