@@ -28,6 +28,9 @@ app.set("views", process.cwd()+"/src/views");
 app.use(logger);
 
 app.use(express.urlencoded({extended: true}));
+//string 형태로 변환된 json을 다시 json 형태로 받게해줌
+//JSON.stringify <-> JSON.parse의 관계
+app.use(express.json());
 
 //session middleware가 사이트로 들어오는 모두를 기억함.
 //브라우저에 cookie를 전송.
