@@ -1,11 +1,14 @@
 import Video from "../models/Video";
+import Comment from "../models/Comment";
 import User from "../models/User";
+import { async } from "regenerator-runtime";
 
 export const home = async(req,res) => {
     try{
         const videos = await Video.find({})
         .sort({ createdAt: "desc" })
-        .populate("owner");        return res.render("home",{pageTitle:"Home", videos});
+        .populate("owner");        
+        return res.render("home",{pageTitle:"Home", videos});
     } catch(error){
         return res.status(400).render("server-error", error);
     }
@@ -15,7 +18,7 @@ export const watch = async(req, res) => {
     //videoSchema의 owner 항목의 ref로 User를 넣어줬기 때문에
     //populate를 이용해 owner를 id로 연결된 User로 채울 수 있음.
     //object (여기서는 owner에 해당하는 user 정보) 전체를 불러와야 할 때 populate 사용]
-    const video = await Video.findById(id).populate("owner");
+    const video = await Video.findById(id).populate("owner").populate("comments");
     return res.render("watch",{pageTitle:video.title, video});
 }
 export const getEdit = async(req, res) => {
@@ -138,11 +141,55 @@ export const registerView = async(req, res) => {
     return res.sendStatus(200);
 }
 
-export const createComment = (req, res) => {
+export const createComment = async(req, res) => {
     const {
     params:{id},
     body:{text},
+    session:{user},
     } = req;
-    console.log(id, text);
-    return res.end();
+    
+    const video = await Video.findById(id);
+    if(!video){
+        return res.sendStatus(404);
+    }
+
+    const comment = await Comment.create({
+        text,
+        owner:user._id,
+        video:id,
+    })
+
+    video.comments.push(comment._id);
+    video.save();
+
+    const commentingUser = await User.findById(user._id);
+    commentingUser.comments.push(comment._id);
+    commentingUser.save();
+
+    return res.status(201).json({newCommentId: comment._id});
+}
+
+export const deleteComment = async(req, res) => {
+    const {
+        params:{id},
+        body:{commentId},
+        session:{user},
+        } = req;
+        
+        const video = await Video.findById(id);
+        if(!video){
+            return res.sendStatus(404);
+        }
+
+        const commentingUser = await User.findById(user._id);
+    
+        await Comment.findByIdAndDelete(commentId);
+
+        video.comments.pop(commentId);
+        video.save();
+
+        commentingUser.comments.pop(commentId);
+        commentingUser.save();
+    
+        return res.sendStatus(201);
 }

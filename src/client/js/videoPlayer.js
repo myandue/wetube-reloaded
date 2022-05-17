@@ -19,6 +19,7 @@ let volumeValue=0.5;
 video.volume=volumeValue;
 
 const handlePlayClick = (e) => {
+    console.log(e);
     if(video.paused){
         video.play();
     }else{
@@ -115,7 +116,7 @@ const handleEnded = () => {
 
 playBtn.addEventListener("click", handlePlayClick);
 video.addEventListener("click",handlePlayClick);
-document.addEventListener("keypress",(e)=>{if(e.code==="Space"||e.code==="Enter")handlePlayClick();});
+document.addEventListener("keypress",(e)=>{if((e.code==="Space"||e.code==="Enter")){handlePlayClick();}});
 muteBtn.addEventListener("click", handleMute);
 volumeRange.addEventListener("input",handleVolumeChange);
 video.addEventListener("loadeddata", handleLoadedMetadata);
